@@ -1,0 +1,98 @@
+<script src="jquery.js"></script>
+<script src="jquery-ui.js"></script>
+<script src="underscore.js"></script>
+<script src="tabs.js"></script>
+<script src="ace.js"></script>
+
+<link rel="stylesheet" type="text/css" href="tabs.css">
+
+<script>
+var documents = {};
+var tabs;
+var editor;
+
+$(document).ready(function(){
+  tabs = new Tabs({
+    shell: $('.tabs-shell'),
+    minWidth: 45,
+    maxWidth: 180
+  });
+
+  editor = ace.edit('code');
+  editor.setValue("");
+  editor.setTheme("ace/theme/monokai");
+
+  new Document();
+
+  $('.new').on('click', function(ev){
+    new Document();
+  });
+});
+
+var AceDocument = ace.require("ace/document");
+var EditSession = ace.require("ace/edit_session");
+var UndoManager = ace.require("ace/undomanager");
+
+var Document = function() {
+  var self = this;
+  var id = 'document-' + _.uniqueId();
+  this.id = id;
+
+  this.tab =  tabs.add({title: 'untitled'});
+
+  this.tab.data('id', id);
+
+  this.tab.on('activate', function(){
+    switchTab($(this).data('id'));
+  });
+
+  this.tab.on('close', function(){
+    delete documents[self.id];
+    tabs.closeTab(self.tab);
+  });
+
+  var aceDocument = new AceDocument.Document('');
+  this.aceDocument = aceDocument;
+
+  this.aceSession = new EditSession.EditSession(this.aceDocument, 'ace/mode/text');
+  this.aceSession.setUndoManager(new UndoManager.UndoManager());
+
+  documents[this.id] = this;
+
+  switchTab(this.id);
+}
+
+var switchTab = function(id){
+  var doc = documents[id];
+  editor.setSession(doc.aceSession);
+  editor.focus();
+}
+</script>
+
+<style>
+body {
+  background-color: #161712;
+}
+
+#code {
+  height: 400px;
+}
+
+button.new {
+  padding: 5px;
+  margin-left: 15px;
+  background: transparent;
+  color: #e1e3e1;
+  border: none;
+  font-size: 18px;
+  font-weight: bold;
+}
+</style>
+
+<div class="tabs-shell tabs">
+    <div class="tabs">
+      <button class='new'>+</button>
+    </div>
+</div>
+
+<div id='code'></div>
